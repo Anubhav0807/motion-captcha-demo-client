@@ -647,3 +647,66 @@ footer {
   }
 
 }
+.custom-input {
+  width: 100%;
+  min-height: 46px;
+  box-sizing: border-box;
+
+  border: 1px solid #d9dee8;
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  padding: 12px 14px;
+
+  font-size: 14px;
+  color: #1f2937;
+
+  display: flex;
+  align-items: center;
+
+  cursor: text;
+
+  outline: none;
+
+  transition: border-color 0.2s ease,
+              box-shadow 0.2s ease;
+}
+
+.custom-input-focused {
+  border-color: #4f46e5;
+
+  box-shadow:
+    0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.custom-input-placeholder {
+  color: #9aa3b2;
+}
+
+.custom-input-value {
+  color: #1f2937;
+}
+
+.custom-input-cursor {
+  width: 1px;
+  height: 20px;
+
+  background: #4f46e5;
+
+  margin-left: 2px;
+
+  animation: cursorBlink 1s infinite;
+}
+
+@keyframes cursorBlink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  51%,
+  100% {
+    opacity: 0;
+  }
+}

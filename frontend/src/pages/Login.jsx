@@ -1,6 +1,7 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useMotionCaptcha } from "motion-captcha-react-sdk";
+
 import LoginCard from "../components/LoginCard";
 
 function Login() {
@@ -8,9 +9,61 @@ function Login() {
 
   const [loginMessage, setLoginMessage] = useState("");
 
+  // MotionCAPTCHA SDK
+  const {
+    getTrackingSummary,
+    stopTracking,
+  } = useMotionCaptcha();
+
+
   const handleLogin = async (email, password) => {
     try {
       setLoginMessage("");
+
+
+      // ==========================================
+      // 1. GET BEHAVIOR DATA
+      // ==========================================
+
+      const behaviorData = getTrackingSummary();
+
+
+      // ==========================================
+      // 2. STOP TRACKING
+      // ==========================================
+
+      stopTracking();
+
+
+      // ==========================================
+      // 3. SEND BEHAVIOR DATA TO METRICS API
+      // ==========================================
+
+      const metricsResponse = await fetch(
+        "https://energy-footwear-bok.ngrok-free.dev/api/metrics",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify(behaviorData)
+        }
+      );
+
+
+      if (!metricsResponse.ok) {
+        console.error(
+          "Failed to send behavior data:",
+          metricsResponse.status
+        );
+      }
+
+
+      // ==========================================
+      // 4. LOGIN API REQUEST
+      // ==========================================
 
       const response = await fetch(
         "http://localhost:5000/api/auth/login",
@@ -28,21 +81,46 @@ function Login() {
         }
       );
 
+
       const data = await response.json();
 
+
+      // ==========================================
+      // 5. HANDLE LOGIN ERROR
+      // ==========================================
+
       if (!response.ok) {
-        setLoginMessage(data.message);
+        setLoginMessage(
+          data.message || "Login failed"
+        );
+
         return;
       }
 
-      // Store JWT token
-      localStorage.setItem("token", data.token);
 
-      // Navigate to dashboard
+      // ==========================================
+      // 6. STORE JWT
+      // ==========================================
+
+      localStorage.setItem(
+        "token",
+        data.token
+      );
+
+
+      // ==========================================
+      // 7. LOGIN SUCCESS
+      // ==========================================
+
       navigate("/dashboard");
 
+
     } catch (error) {
-      console.error("Login error:", error);
+
+      console.error(
+        "Login error:",
+        error
+      );
 
       setLoginMessage(
         "Cannot connect to the server."
@@ -50,10 +128,15 @@ function Login() {
     }
   };
 
+
   return (
     <div className="page">
 
-      {/* Navbar */}
+
+      {/* =========================
+          NAVBAR
+      ========================= */}
+
       <header className="navbar">
 
         <div className="brand">
@@ -75,12 +158,19 @@ function Login() {
       </header>
 
 
-      {/* Login */}
+      {/* =========================
+          LOGIN SECTION
+      ========================= */}
+
       <main className="login-container">
 
         <div className="login-card-wrapper">
 
-          {/* Heading */}
+
+          {/* =========================
+              HEADING
+          ========================= */}
+
           <div className="welcome-text">
 
             <p className="small-label">
@@ -98,13 +188,19 @@ function Login() {
           </div>
 
 
-          {/* Login Form */}
+          {/* =========================
+              LOGIN FORM
+          ========================= */}
+
           <LoginCard
             onLogin={handleLogin}
           />
 
 
-          {/* Error / Success Message */}
+          {/* =========================
+              LOGIN ERROR
+          ========================= */}
+
           {loginMessage && (
             <div className="login-message">
               {loginMessage}
@@ -112,7 +208,10 @@ function Login() {
           )}
 
 
-          {/* Signup Link */}
+          {/* =========================
+              SIGNUP LINK
+          ========================= */}
+
           <p
             style={{
               textAlign: "center",
@@ -133,10 +232,14 @@ function Login() {
             >
               Create account
             </Link>
+
           </p>
 
 
-          {/* Security Message */}
+          {/* =========================
+              SECURITY MESSAGE
+          ========================= */}
+
           <div className="security-note">
 
             <span className="lock-icon">
@@ -145,7 +248,9 @@ function Login() {
 
             <span>
               Your connection is protected by
-              <strong> MotionCAPTCHA-X</strong>
+              <strong>
+                {" "}MotionCAPTCHA-X
+              </strong>
             </span>
 
           </div>
@@ -155,7 +260,10 @@ function Login() {
       </main>
 
 
-      {/* Footer */}
+      {/* =========================
+          FOOTER
+      ========================= */}
+
       <footer>
         © 2026 MotionClient. All rights reserved.
       </footer>
@@ -165,4 +273,3 @@ function Login() {
 }
 
 export default Login;
-

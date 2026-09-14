@@ -1,4 +1,5 @@
 import { useState } from "react";
+import CustomInput from "./CustomInput";
 
 function LoginCard({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -6,6 +7,7 @@ function LoginCard({ onLogin }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     onLogin(email, password);
   };
 
@@ -14,24 +16,30 @@ function LoginCard({ onLogin }) {
 
       <form onSubmit={handleSubmit}>
 
+        {/* EMAIL */}
         <div className="form-group">
-          <label htmlFor="email">
+
+          <label>
             Email address
           </label>
 
-          <input
-            id="email"
-            type="email"
-            placeholder="you@example.com"
+          <CustomInput
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
+            onChange={setEmail}
+            placeholder="you@example.com"
+            type="email"
+            ariaLabel="Email address"
           />
+
         </div>
 
+
+        {/* PASSWORD */}
         <div className="form-group">
+
           <div className="password-label">
-            <label htmlFor="password">
+
+            <label>
               Password
             </label>
 
@@ -41,19 +49,21 @@ function LoginCard({ onLogin }) {
             >
               Forgot password?
             </button>
+
           </div>
 
-          <input
-            id="password"
-            type="password"
-            placeholder="Enter your password"
+          <CustomInput
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
+            onChange={setPassword}
+            placeholder="Enter your password"
+            type="password"
+            ariaLabel="Password"
           />
+
         </div>
 
-        {/* MotionCAPTCHA will be inserted here later */}
+
+        {/* MOTION CAPTCHA */}
 
         <div className="captcha-placeholder">
 
@@ -62,6 +72,7 @@ function LoginCard({ onLogin }) {
           </div>
 
           <div>
+
             <p className="captcha-title">
               MotionCAPTCHA
             </p>
@@ -69,9 +80,13 @@ function LoginCard({ onLogin }) {
             <p className="captcha-description">
               Human verification will appear here
             </p>
+
           </div>
 
         </div>
+
+
+        {/* LOGIN BUTTON */}
 
         <button
           type="submit"
