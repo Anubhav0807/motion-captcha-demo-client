@@ -11,21 +11,54 @@ function CustomInput({
 
   const [isFocused, setIsFocused] = useState(false);
 
-  /*
-   * We use a hidden internal representation for password fields.
-   * The actual value remains in React state.
-   */
-
   const isPassword = type === "password";
-
-
-  // ==========================================
-  // DISPLAY VALUE
-  // ==========================================
 
   const displayValue = isPassword
     ? "•".repeat(value.length)
     : value;
+
+
+  // ==========================================
+  // UPDATE DISPLAYED VALUE
+  // ==========================================
+
+  useEffect(() => {
+    const element = editorRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    const displayText = isPassword
+      ? "•".repeat(value.length)
+      : value;
+
+    if (element.textContent !== displayText) {
+      element.textContent = displayText;
+    }
+  }, [value, isPassword]);
+
+
+  // ==========================================
+  // GET CURSOR POSITION
+  // ==========================================
+
+  const getCursorPosition = () => {
+    const element = editorRef.current;
+    const selection = window.getSelection();
+
+    if (
+      !element ||
+      !selection ||
+      selection.rangeCount === 0
+    ) {
+      return 0;
+    }
+
+    const range = selection.getRangeAt(0);
+
+    return range.startOffset;
+  };
 
 
   // ==========================================
@@ -45,15 +78,13 @@ function CustomInput({
       return;
     }
 
-    const range = document.createRange();
-
-    range.selectNodeContents(element);
-
     const textNode = element.firstChild;
 
     if (!textNode) {
       return;
     }
+
+    const range = document.createRange();
 
     const safePosition = Math.min(
       position,
@@ -68,87 +99,36 @@ function CustomInput({
     range.collapse(true);
 
     selection.removeAllRanges();
-
     selection.addRange(range);
   };
 
 
   // ==========================================
-  // GET CURSOR POSITION
-  // ==========================================
-
-  const getCursorPosition = () => {
-    const element = editorRef.current;
-
-    const selection = window.getSelection();
-
-    if (!element || !selection || selection.rangeCount === 0) {
-      return 0;
-    }
-
-    const range = selection.getRangeAt(0);
-
-    return range.startOffset;
-  };
-
-
-  // ==========================================
-  // UPDATE DOM VALUE
-  // ==========================================
-
-  useEffect(() => {
-    const element = editorRef.current;
-
-    if (!element) {
-      return;
-    }
-
-    /*
-     * For password fields we render bullets.
-     * For normal fields we render the actual value.
-     */
-
-    const newDisplayValue = isPassword
-      ? "•".repeat(value.length)
-      : value;
-
-    if (element.textContent !== newDisplayValue) {
-      element.textContent = newDisplayValue;
-    }
-
-  }, [value, isPassword]);
-
-
-  // ==========================================
-  // KEYBOARD HANDLING
+  // KEYBOARD
   // ==========================================
 
   const handleKeyDown = (e) => {
+    const cursorPosition = getCursorPosition();
 
-    const currentPosition = getCursorPosition();
 
-
-    // ------------------------------------------
     // BACKSPACE
-    // ------------------------------------------
-
     if (e.key === "Backspace") {
 
       e.preventDefault();
 
-      if (currentPosition === 0) {
+      if (cursorPosition === 0) {
         return;
       }
 
       const newValue =
-        value.slice(0, currentPosition - 1) +
-        value.slice(currentPosition);
+        value.slice(0, cursorPosition - 1) +
+        value.slice(cursorPosition);
 
       onChange(newValue);
 
       requestAnimationFrame(() => {
         setCursorPosition(
-          currentPosition - 1
+          cursorPosition - 1
         );
       });
 
@@ -156,47 +136,47 @@ function CustomInput({
     }
 
 
-    // ------------------------------------------
     // DELETE
-    // ------------------------------------------
-
     if (e.key === "Delete") {
 
       e.preventDefault();
 
-      if (currentPosition >= value.length) {
+      if (cursorPosition >= value.length) {
         return;
       }
 
       const newValue =
-        value.slice(0, currentPosition) +
-        value.slice(currentPosition + 1);
+        value.slice(0, cursorPosition) +
+        value.slice(cursorPosition + 1);
 
       onChange(newValue);
 
       requestAnimationFrame(() => {
-        setCursorPosition(
-          currentPosition
-        );
+        setCursorPosition(cursorPosition);
       });
 
       return;
     }
 
 
-    // ------------------------------------------
     // ENTER
-    // ------------------------------------------
-
     if (e.key === "Enter") {
       return;
     }
 
 
-    // ------------------------------------------
-    // ALLOW NAVIGATION KEYS
-    // ------------------------------------------
+    // CTRL / CMD SHORTCUTS
+    if (
+      (e.ctrlKey || e.metaKey) &&
+      ["a", "c", "x", "v"].includes(
+        e.key.toLowerCase()
+      )
+    ) {
+      return;
+    }
 
+
+    // NAVIGATION
     if (
       e.key === "ArrowLeft" ||
       e.key === "ArrowRight" ||
@@ -207,82 +187,25 @@ function CustomInput({
     }
 
 
-    // ------------------------------------------
-    // CTRL/CMD + A
-    // ------------------------------------------
-
-    if (
-      (e.ctrlKey || e.metaKey) &&
-      e.key.toLowerCase() === "a"
-    ) {
-      return;
-    }
-
-
-    // ------------------------------------------
-    // CTRL/CMD + C
-    // ------------------------------------------
-
-    if (
-      (e.ctrlKey || e.metaKey) &&
-      e.key.toLowerCase() === "c"
-    ) {
-      return;
-    }
-
-
-    // ------------------------------------------
-    // CTRL/CMD + X
-    // ------------------------------------------
-
-    if (
-      (e.ctrlKey || e.metaKey) &&
-      e.key.toLowerCase() === "x"
-    ) {
-      return;
-    }
-
-
-    // ------------------------------------------
-    // CTRL/CMD + V
-    // ------------------------------------------
-
-    if (
-      (e.ctrlKey || e.metaKey) &&
-      e.key.toLowerCase() === "v"
-    ) {
-      return;
-    }
-
-
-    // ------------------------------------------
     // IGNORE OTHER CONTROL KEYS
-    // ------------------------------------------
-
     if (e.key.length !== 1) {
       return;
     }
 
 
-    // ------------------------------------------
     // INSERT CHARACTER
-    // ------------------------------------------
-
     e.preventDefault();
 
     const newValue =
-      value.slice(0, currentPosition) +
+      value.slice(0, cursorPosition) +
       e.key +
-      value.slice(currentPosition);
+      value.slice(cursorPosition);
 
     onChange(newValue);
 
-
-    // Move cursor after inserted character
-
     requestAnimationFrame(() => {
       setCursorPosition(
-        currentPosition + 1
+        cursorPosition + 1
       );
     });
   };
@@ -303,89 +226,21 @@ function CustomInput({
       return;
     }
 
-    const currentPosition =
+    const cursorPosition =
       getCursorPosition();
 
     const newValue =
-      value.slice(0, currentPosition) +
+      value.slice(0, cursorPosition) +
       pastedText +
-      value.slice(currentPosition);
+      value.slice(cursorPosition);
 
     onChange(newValue);
 
-
     requestAnimationFrame(() => {
       setCursorPosition(
-        currentPosition + pastedText.length
+        cursorPosition + pastedText.length
       );
     });
-  };
-
-
-  // ==========================================
-  // CUT
-  // ==========================================
-
-  const handleCut = (e) => {
-
-    const selection =
-      window.getSelection();
-
-    if (!selection || selection.isCollapsed) {
-      return;
-    }
-
-    const selectedText =
-      selection.toString();
-
-    e.clipboardData.setData(
-      "text/plain",
-      selectedText
-    );
-
-    e.preventDefault();
-
-
-    const start =
-      selection.anchorOffset;
-
-    const end =
-      selection.focusOffset;
-
-    const selectionStart =
-      Math.min(start, end);
-
-    const selectionEnd =
-      Math.max(start, end);
-
-
-    const newValue =
-      value.slice(0, selectionStart) +
-      value.slice(selectionEnd);
-
-    onChange(newValue);
-
-
-    requestAnimationFrame(() => {
-      setCursorPosition(
-        selectionStart
-      );
-    });
-  };
-
-
-  // ==========================================
-  // SELECTION DELETE
-  // ==========================================
-
-  const handleBeforeInput = (e) => {
-
-    if (
-      e.inputType ===
-      "deleteByCut"
-    ) {
-      return;
-    }
   };
 
 
@@ -408,20 +263,6 @@ function CustomInput({
 
 
   // ==========================================
-  // CLICK
-  // ==========================================
-
-  const handleClick = () => {
-
-    if (!editorRef.current) {
-      return;
-    }
-
-    editorRef.current.focus();
-  };
-
-
-  // ==========================================
   // RENDER
   // ==========================================
 
@@ -434,50 +275,34 @@ function CustomInput({
       }`}
     >
 
+      {/* Placeholder */}
+      <span
+        className={`custom-input-placeholder ${
+          value || isFocused
+            ? "custom-input-placeholder-hidden"
+            : ""
+        }`}
+      >
+        {placeholder}
+      </span>
+
+
+      {/* Editable area */}
       <div
         ref={editorRef}
-
         className="custom-input"
-
         contentEditable={true}
-
         suppressContentEditableWarning={true}
-
         role="textbox"
-
         aria-label={ariaLabel}
-
         aria-multiline="false"
-
         spellCheck={false}
-
         tabIndex={0}
-
         onKeyDown={handleKeyDown}
-
         onPaste={handlePaste}
-
-        onCut={handleCut}
-
-        onBeforeInput={handleBeforeInput}
-
         onFocus={handleFocus}
-
         onBlur={handleBlur}
-
-        onClick={handleClick}
       />
-
-      {!value && !isFocused && (
-        <div
-          className="custom-input-placeholder"
-          onClick={() => {
-            editorRef.current?.focus();
-          }}
-        >
-          {placeholder}
-        </div>
-      )}
 
     </div>
   );

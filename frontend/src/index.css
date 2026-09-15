@@ -647,9 +647,12 @@ footer {
   }
 
 }
-.custom-input {
+.custom-input-wrapper {
+  position: relative;
+
   width: 100%;
-  min-height: 46px;
+  height: 46px;
+
   box-sizing: border-box;
 
   border: 1px solid #d9dee8;
@@ -657,33 +660,83 @@ footer {
 
   background: #ffffff;
 
-  padding: 12px 14px;
-
-  font-size: 14px;
-  color: #1f2937;
-
-  display: flex;
-  align-items: center;
-
-  cursor: text;
-
-  outline: none;
-
-  transition: border-color 0.2s ease,
-              box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.custom-input-focused {
+.custom-input-wrapper-focused {
   border-color: #4f46e5;
 
   box-shadow:
     0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
-.custom-input-placeholder {
-  color: #9aa3b2;
+
+/* ==========================================
+   ACTUAL CUSTOM INPUT
+========================================== */
+
+.custom-input {
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  box-sizing: border-box;
+
+  padding: 12px 14px;
+
+  outline: none;
+
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 20px;
+
+  color: #1f2937;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  cursor: text;
 }
 
+
+/* ==========================================
+   PLACEHOLDER
+========================================== */
+
+.custom-input-placeholder {
+  position: absolute;
+
+  top: 50%;
+  left: 14px;
+
+  transform: translateY(-50%);
+
+  font-size: 14px;
+
+  line-height: 20px;
+
+  color: #9aa3b2;
+
+  pointer-events: none;
+
+  transition:
+    opacity 0.12s ease;
+}
+
+
+/* Keep placeholder in exactly the same place,
+   just make it invisible */
+
+.custom-input-placeholder-hidden {
+  opacity: 0;
+}
 .custom-input-value {
   color: #1f2937;
 }
@@ -709,4 +762,24 @@ footer {
   100% {
     opacity: 0;
   }
+}
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.login-button {
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease;
+}
+
+.login-button:active {
+  transform: translateY(2px);
+
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.15);
 }
