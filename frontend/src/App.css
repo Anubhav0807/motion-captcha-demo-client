@@ -182,3 +182,62 @@
     border-right-color: var(--border);
   }
 }
+.custom-input-wrapper {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+
+  border: 1px solid #d9dee8;
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.custom-input-wrapper-focused {
+  border-color: #4f46e5;
+
+  box-shadow:
+    0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.custom-input {
+  width: 100%;
+  min-height: 46px;
+
+  box-sizing: border-box;
+
+  padding: 12px 14px;
+
+  outline: none;
+
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 20px;
+
+  color: #1f2937;
+
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  cursor: text;
+}
+
+.custom-input-placeholder {
+  position: absolute;
+
+  top: 50%;
+  left: 14px;
+
+  transform: translateY(-50%);
+
+  color: #9aa3b2;
+
+  font-size: 14px;
+
+  pointer-events: none;
+}
