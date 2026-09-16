@@ -211,7 +211,10 @@ input {
 
   margin: 8px 0 20px;
 }
-
+.captcha-image{
+  image-rendering: pixelated;
+  width: 350px;
+}
 .captcha-placeholder-icon {
   width: 40px;
   height: 40px;

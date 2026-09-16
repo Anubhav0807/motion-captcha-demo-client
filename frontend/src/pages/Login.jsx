@@ -7,37 +7,56 @@ import LoginCard from "../components/LoginCard";
 function Login() {
   const navigate = useNavigate();
 
+  /* =========================
+      LOGIN MESSAGE
+  ========================= */
+
   const [loginMessage, setLoginMessage] = useState("");
 
-  // MotionCAPTCHA SDK
+
+  /* =========================
+      CAPTCHA STATES
+  ========================= */
+
+  const [showCaptcha, setShowCaptcha] = useState(false);
+
+  const [captchaImage, setCaptchaImage] = useState("");
+
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+
+
+  /* =========================
+      MOTION CAPTCHA SDK
+  ========================= */
+
   const {
     getTrackingSummary,
-    stopTracking,
+    stopTracking
   } = useMotionCaptcha();
 
 
+  /* =========================
+      LOGIN
+  ========================= */
+
   const handleLogin = async (email, password) => {
     try {
+
       setLoginMessage("");
 
 
-      // ==========================================
-      // 1. GET BEHAVIOR DATA
-      // ==========================================
+      /* =========================
+          COLLECT BEHAVIOR DATA
+      ========================= */
 
       const behaviorData = getTrackingSummary();
-
-
-      // ==========================================
-      // 2. STOP TRACKING
-      // ==========================================
 
       stopTracking();
 
 
-      // ==========================================
-      // 3. SEND BEHAVIOR DATA TO METRICS API
-      // ==========================================
+      /* =========================
+          SEND DATA TO METRICS API
+      ========================= */
 
       const metricsResponse = await fetch(
         "https://energy-footwear-bok.ngrok-free.dev/api/metrics",
@@ -53,17 +72,130 @@ function Login() {
       );
 
 
+      /* =========================
+          CHECK METRICS RESPONSE
+      ========================= */
+
       if (!metricsResponse.ok) {
-        console.error(
-          "Failed to send behavior data:",
-          metricsResponse.status
+
+        setLoginMessage(
+          "Unable to perform security verification."
         );
+
+        return;
       }
 
 
-      // ==========================================
-      // 4. LOGIN API REQUEST
-      // ==========================================
+      /* =========================
+          GET RISK SCORE
+      ========================= */
+
+      const metricsData = await metricsResponse.json();
+
+      console.log("Metrics response:", metricsData);
+
+
+      /* =========================
+          SELECT CAPTCHA
+      ========================= */
+
+      if (metricsData.risk_score < 50) {
+
+        // Low-risk → Static CAPTCHA
+
+        setCaptchaImage("/static_captcha.jpg");
+
+      } else {
+
+        // Higher-risk → Motion CAPTCHA
+
+        setCaptchaImage("/background_drift.gif");
+
+      }
+
+
+      /* =========================
+          SHOW CAPTCHA
+      ========================= */
+
+      setCaptchaAnswer("");
+
+      setShowCaptcha(true);
+
+    } catch (error) {
+
+      console.error("Metrics error:", error);
+
+      setLoginMessage(
+        "Cannot connect to the security verification server."
+      );
+    }
+  };
+
+
+  /* =========================
+      CAPTCHA VERIFICATION
+  ========================= */
+
+  const handleCaptchaSubmit = async () => {
+
+    if (!captchaAnswer.trim()) {
+
+      setLoginMessage(
+        "Please enter the CAPTCHA."
+      );
+
+      return;
+    }
+
+
+    /*
+      TEMPORARY CAPTCHA VERIFICATION
+
+      Replace this later with your
+      actual CAPTCHA verification API.
+    */
+
+    const correctAnswer = "1234";
+
+
+    if (
+      captchaAnswer.trim().toLowerCase() !==
+      correctAnswer.toLowerCase()
+    ) {
+
+      setLoginMessage(
+        "Incorrect CAPTCHA. Please try again."
+      );
+
+      return;
+    }
+
+
+    /* =========================
+        CAPTCHA SUCCESS
+    ========================= */
+
+    setLoginMessage("");
+
+
+    /*
+      At this point CAPTCHA is verified.
+
+      We now need to perform the
+      actual login request.
+    */
+
+    const email = document
+      .querySelector('[aria-label="Email address"]')
+      ?.textContent || "";
+
+    const password = document
+      .querySelector('[aria-label="Password"]')
+      ?.textContent || "";
+
+
+    try {
 
       const response = await fetch(
         "http://localhost:5000/api/auth/login",
@@ -85,11 +217,8 @@ function Login() {
       const data = await response.json();
 
 
-      // ==========================================
-      // 5. HANDLE LOGIN ERROR
-      // ==========================================
-
       if (!response.ok) {
+
         setLoginMessage(
           data.message || "Login failed"
         );
@@ -98,9 +227,9 @@ function Login() {
       }
 
 
-      // ==========================================
-      // 6. STORE JWT
-      // ==========================================
+      /* =========================
+          SAVE JWT
+      ========================= */
 
       localStorage.setItem(
         "token",
@@ -108,19 +237,15 @@ function Login() {
       );
 
 
-      // ==========================================
-      // 7. LOGIN SUCCESS
-      // ==========================================
+      /* =========================
+          GO TO DASHBOARD
+      ========================= */
 
       navigate("/dashboard");
 
-
     } catch (error) {
 
-      console.error(
-        "Login error:",
-        error
-      );
+      console.error("Login error:", error);
 
       setLoginMessage(
         "Cannot connect to the server."
@@ -129,9 +254,13 @@ function Login() {
   };
 
 
-  return (
-    <div className="page">
+  /* =========================
+      UI
+  ========================= */
 
+  return (
+
+    <div className="page">
 
       {/* =========================
           NAVBAR
@@ -159,17 +288,12 @@ function Login() {
 
 
       {/* =========================
-          LOGIN SECTION
+          LOGIN
       ========================= */}
 
       <main className="login-container">
 
         <div className="login-card-wrapper">
-
-
-          {/* =========================
-              HEADING
-          ========================= */}
 
           <div className="welcome-text">
 
@@ -189,22 +313,29 @@ function Login() {
 
 
           {/* =========================
-              LOGIN FORM
+              LOGIN CARD
           ========================= */}
 
           <LoginCard
             onLogin={handleLogin}
+            showCaptcha={showCaptcha}
+            captchaImage={captchaImage}
+            captchaAnswer={captchaAnswer}
+            setCaptchaAnswer={setCaptchaAnswer}
+            onCaptchaSubmit={handleCaptchaSubmit}
           />
 
 
           {/* =========================
-              LOGIN ERROR
+              LOGIN MESSAGE
           ========================= */}
 
           {loginMessage && (
+
             <div className="login-message">
               {loginMessage}
             </div>
+
           )}
 
 
@@ -220,6 +351,7 @@ function Login() {
               marginTop: "20px"
             }}
           >
+
             Don't have an account?{" "}
 
             <Link
@@ -237,7 +369,7 @@ function Login() {
 
 
           {/* =========================
-              SECURITY MESSAGE
+              SECURITY NOTE
           ========================= */}
 
           <div className="security-note">
@@ -248,9 +380,7 @@ function Login() {
 
             <span>
               Your connection is protected by
-              <strong>
-                {" "}MotionCAPTCHA-X
-              </strong>
+              <strong>{" "}MotionCAPTCHA-X</strong>
             </span>
 
           </div>
