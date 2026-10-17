@@ -242,7 +242,7 @@ function Signup() {
 
             <span>
               Protected by
-              <strong> MotionCAPTCHA-X</strong>
+              <strong> MotionCAPTCHA</strong>
             </span>
 
           </div>

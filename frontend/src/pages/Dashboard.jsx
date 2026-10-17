@@ -169,7 +169,7 @@ function Dashboard() {
 
             <p>
               Your account is protected by
-              MotionCAPTCHA-X.
+              MotionCAPTCHA.
             </p>
 
             <span className="status-badge">
@@ -211,7 +211,7 @@ function Dashboard() {
           <div>
 
             <p className="small-label">
-              MOTIONCAPTCHA-X
+              MOTIONCAPTCHA
             </p>
 
             <h2>

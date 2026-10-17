@@ -23,25 +23,19 @@ function Login() {
 
   const { getTrackingSummary, stopTracking } = useMotionCaptcha();
 
-  const [loginMessage, setLoginMessage] = useState("");
+  const [flowState, setFlowState] = useState("init");
 
-  const [showCaptcha, setShowCaptcha] = useState(false);
+  const [loginMessage, setLoginMessage] = useState("");
   const [captchaImage, setCaptchaImage] = useState("");
   const [captchaAnswer, setCaptchaAnswer] = useState("");
 
   // "static" | "dynamic" | ""
   const [captchaType, setCaptchaType] = useState("");
 
-  // "idle" | "loading" | "ready" | "error"
-  const [captchaStatus, setCaptchaStatus] = useState("idle");
-
   const [credentials, setCredentials] = useState({
     email: "",
     password: "",
   });
-
-  // true while the risk score is being fetched / CAPTCHA is being prepared
-  const [isLoading, setIsLoading] = useState(false);
 
   // Release the previous Blob URL when the image changes or
   // the component unmounts.
@@ -56,13 +50,11 @@ function Login() {
   // LOGIN AND RISK ASSESSMENT
   const handleLogin = async (email, password) => {
     setLoginMessage("");
-    setIsLoading(true);
+    setFlowState("analyzing");
 
     setCredentials({ email, password });
-    setShowCaptcha(false);
     setCaptchaAnswer("");
     setCaptchaType("");
-    setCaptchaStatus("idle");
     setCaptchaImage(""); // the effect above revokes the old Blob URL
 
     try {
@@ -106,8 +98,7 @@ function Login() {
       console.log("Backend risk score:", riskScore);
 
       // Risk score received: show the CAPTCHA panel in a loading state.
-      setShowCaptcha(true);
-      setCaptchaStatus("loading");
+      setFlowState("generating"); 
       setLoginMessage("");
 
       if (riskScore < 50) {
@@ -116,6 +107,7 @@ function Login() {
         console.log("Selected: Static CAPTCHA");
 
         // The <img> onLoad handler switches status to "ready".
+        await new Promise(r => setTimeout(r, 2000));
         setCaptchaImage("/static_captcha.jpg");
       } else {
         // DYNAMIC CAPTCHA (GIF from the CAPTCHA API)
@@ -123,7 +115,7 @@ function Login() {
         console.log("Loading dynamic CAPTCHA GIF...");
 
         const captchaResponse = await fetch(
-          `${CAPTCHA_API}?t=${Date.now()}`,
+          `${CAPTCHA_API}?uppercase=${true}&lowercase=${false}&numbers=${true}`,
           {
             method: "GET",
             cache: "no-store",
@@ -161,12 +153,12 @@ function Login() {
         setCaptchaImage(URL.createObjectURL(gifBlob));
         console.log("Selected: Dynamic GIF CAPTCHA");
       }
+      setFlowState("captcha-ready");
     } catch (error) {
       console.error("Risk assessment/CAPTCHA error:", error);
 
-      setShowCaptcha(false);
       setCaptchaType("");
-      setCaptchaStatus("idle");
+      setFlowState("captcha-not-found");
 
       setLoginMessage(
         error.message ||
@@ -178,19 +170,15 @@ function Login() {
       } catch (error) {
         console.error("Tracking cleanup error:", error);
       }
-
-      setIsLoading(false);
     }
   };
 
   // Called by the CAPTCHA <img> in LoginCard
   const handleCaptchaImageLoad = () => {
-    setCaptchaStatus("ready");
     setLoginMessage("Complete the CAPTCHA to continue.");
   };
 
   const handleCaptchaImageError = () => {
-    setCaptchaStatus("error");
     setLoginMessage("Failed to load the CAPTCHA image. Please try again.");
   };
 
@@ -266,14 +254,12 @@ function Login() {
 
           <LoginCard
             onLogin={handleLogin}
-            showCaptcha={showCaptcha}
             captchaImage={captchaImage}
             captchaAnswer={captchaAnswer}
             setCaptchaAnswer={setCaptchaAnswer}
             onCaptchaSubmit={handleCaptchaSubmit}
-            isLoading={isLoading}
+            flowState={flowState}
             captchaType={captchaType}
-            captchaStatus={captchaStatus}
             onCaptchaImageLoad={handleCaptchaImageLoad}
             onCaptchaImageError={handleCaptchaImageError}
           />
@@ -309,7 +295,7 @@ function Login() {
             <span className="lock-icon">🔒</span>
             <span>
               Your connection is protected by
-              <strong> MotionCAPTCHA-X</strong>
+              <strong> MotionCAPTCHA</strong>
             </span>
           </div>
         </div>
