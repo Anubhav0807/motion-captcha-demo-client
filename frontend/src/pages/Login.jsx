@@ -4,13 +4,8 @@ import { useMotionCaptcha } from "motion-captcha-react-sdk";
 
 import LoginCard from "../components/LoginCard";
 
-const METRICS_API =
-  "https://energy-footwear-bok.ngrok-free.dev/api/metrics";
-
-const CAPTCHA_API =
-  "https://energy-footwear-bok.ngrok-free.dev/api/captcha";
-
-const AUTH_API = "http://localhost:5000/api/auth/login";
+const BACKEND_API = import.meta.env.VITE_BACKEND_API;
+const CAPTCHA_API = import.meta.env.VITE_CAPTCHA_API;
 
 // Needed for ngrok free domains, otherwise ngrok returns its own
 // warning page (no CORS headers) instead of your API response.
@@ -64,7 +59,7 @@ function Login() {
       console.log("Behavior data:", behaviorData);
 
       // Send behavior data to the risk API.
-      const metricsResponse = await fetch(METRICS_API, {
+      const metricsResponse = await fetch(CAPTCHA_API + "/metrics", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -85,6 +80,7 @@ function Login() {
       console.log("Metrics response:", metricsData);
 
       const riskScore = Number(metricsData.risk_score);
+      const captchaToken = metricsData.token;
 
       if (
         metricsData.risk_score === undefined ||
@@ -98,61 +94,62 @@ function Login() {
       console.log("Backend risk score:", riskScore);
 
       // Risk score received: show the CAPTCHA panel in a loading state.
-      setFlowState("generating"); 
+      setFlowState("generating");
       setLoginMessage("");
 
       if (riskScore < 50) {
         // STATIC CAPTCHA (local file)
         setCaptchaType("static");
-        console.log("Selected: Static CAPTCHA");
-
-        // The <img> onLoad handler switches status to "ready".
-        await new Promise(r => setTimeout(r, 2000));
-        setCaptchaImage("/static_captcha.jpg");
+        console.log("Loading static CAPTCHA GIF...");
       } else {
         // DYNAMIC CAPTCHA (GIF from the CAPTCHA API)
         setCaptchaType("dynamic");
         console.log("Loading dynamic CAPTCHA GIF...");
-
-        const captchaResponse = await fetch(
-          `${CAPTCHA_API}?uppercase=${true}&lowercase=${false}&numbers=${true}`,
-          {
-            method: "GET",
-            cache: "no-store",
-            headers: NGROK_HEADERS,
-          }
-        );
-
-        if (!captchaResponse.ok) {
-          throw new Error(
-            `CAPTCHA API returned ${captchaResponse.status}`
-          );
-        }
-
-        const gifBlob = await captchaResponse.blob();
-
-        console.log("CAPTCHA content type:", gifBlob.type);
-        console.log("CAPTCHA file size:", gifBlob.size);
-
-        if (gifBlob.size === 0) {
-          throw new Error("The CAPTCHA API returned an empty file.");
-        }
-
-        if (
-          gifBlob.type &&
-          !gifBlob.type.startsWith("image/") &&
-          gifBlob.type !== "application/octet-stream"
-        ) {
-          throw new Error(
-            `Expected an image but received ${gifBlob.type}`
-          );
-        }
-
-        // Create a browser URL for displaying the downloaded GIF.
-        // The <img> onLoad handler switches status to "ready".
-        setCaptchaImage(URL.createObjectURL(gifBlob));
-        console.log("Selected: Dynamic GIF CAPTCHA");
       }
+
+      console.log(captchaToken);
+      const captchaResponse = await fetch(
+        `${CAPTCHA_API}/captcha` +
+        `?token=${captchaToken}` +
+        `&uppercase=${true}` +
+        `&lowercase=${false}` +
+        `&numbers=${true}`,
+        {
+          method: "GET",
+          cache: "no-store",
+          headers: NGROK_HEADERS,
+        }
+      );
+
+      if (!captchaResponse.ok) {
+        throw new Error(
+          `CAPTCHA API returned ${captchaResponse.status}`
+        );
+      }
+
+      const gifBlob = await captchaResponse.blob();
+
+      console.log("CAPTCHA content type:", gifBlob.type);
+      console.log("CAPTCHA file size:", gifBlob.size);
+
+      if (gifBlob.size === 0) {
+        throw new Error("The CAPTCHA API returned an empty file.");
+      }
+
+      if (
+        gifBlob.type &&
+        !gifBlob.type.startsWith("image/") &&
+        gifBlob.type !== "application/octet-stream"
+      ) {
+        throw new Error(
+          `Expected an image but received ${gifBlob.type}`
+        );
+      }
+
+      // Create a browser URL for displaying the downloaded GIF.
+      // The <img> onLoad handler switches status to "ready".
+      setCaptchaImage(URL.createObjectURL(gifBlob));
+      
       setFlowState("captcha-ready");
     } catch (error) {
       console.error("Risk assessment/CAPTCHA error:", error);
@@ -162,7 +159,7 @@ function Login() {
 
       setLoginMessage(
         error.message ||
-          "Unable to complete security verification."
+        "Unable to complete security verification."
       );
     } finally {
       try {
@@ -198,7 +195,7 @@ function Login() {
     }
 
     try {
-      const response = await fetch(AUTH_API, {
+      const response = await fetch(BACKEND_API + "/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
