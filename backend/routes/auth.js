@@ -8,6 +8,7 @@ const protect = require("../middleware/auth");
 const router = express.Router();
 
 const CAPTCHA_API = process.env.CAPTCHA_API;
+const CAPTCHA_API_SECRET = process.env.CAPTCHA_API_SECRET;
 
 // REGISTER
 router.post("/register", async (req, res) => {
@@ -95,22 +96,26 @@ router.post("/login", async (req, res) => {
 
     const payload = {
       token: captchaToken,
-      captcha_text: captchaText,
+      answer: captchaText,
     }
 
     // First verify the captcha before touching the clients database
     try {
-      const response = await fetch(CAPTCHA_API + "/captcha", {
+      const response = await fetch(CAPTCHA_API + "/verify", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
+            "authorization": CAPTCHA_API_SECRET
           },
           body: JSON.stringify(payload),
       })
 
-      if (!response.ok) {
+      const body = await response.json();
+
+      if (!response.ok || !body.success) {
         throw new Error("CAPTCHA verification failed.");
       }
+      
     } catch (error) {
       console.error("Login error:", error);
       return res.status(422).json({

@@ -6,6 +6,7 @@ import LoginCard from "../components/LoginCard";
 
 const BACKEND_API = import.meta.env.VITE_BACKEND_API;
 const CAPTCHA_API = import.meta.env.VITE_CAPTCHA_API;
+const CAPTCHA_API_KEY = import.meta.env.VITE_CAPTCHA_API_KEY;
 
 // Needed for ngrok free domains, otherwise ngrok returns its own
 // warning page (no CORS headers) instead of your API response.
@@ -64,10 +65,11 @@ function Login() {
       console.log("Behavior data:", behaviorData);
 
       // Send behavior data to the risk API.
-      const metricsResponse = await fetch(CAPTCHA_API + "/metrics", {
+      const metricsResponse = await fetch(CAPTCHA_API + "/assess", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-Site-Key": CAPTCHA_API_KEY,
           ...NGROK_HEADERS,
         },
         body: JSON.stringify(behaviorData),
@@ -81,6 +83,7 @@ function Login() {
 
       // Read the backend response.
       const metricsData = await metricsResponse.json();
+      console.log(metricsData);
 
       console.log("Metrics response:", metricsData);
 
@@ -118,11 +121,7 @@ function Login() {
       }
 
       const captchaResponse = await fetch(
-        `${CAPTCHA_API}/captcha` +
-        `?token=${captchaToken}` +
-        `&uppercase=${true}` +
-        `&lowercase=${false}` +
-        `&numbers=${true}`,
+        `${CAPTCHA_API}/challenge/${captchaToken}`,
         {
           method: "GET",
           cache: "no-store",
