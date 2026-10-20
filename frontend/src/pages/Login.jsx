@@ -30,6 +30,7 @@ function Login() {
   const [credentials, setCredentials] = useState({
     email: "",
     password: "",
+    captchaToken: "",
   });
 
   // Release the previous Blob URL when the image changes or
@@ -47,7 +48,11 @@ function Login() {
     setLoginMessage("");
     setFlowState("analyzing");
 
-    setCredentials({ email, password });
+    setCredentials((prev) => ({
+      ...prev,
+      email: email,
+      password: password
+    }));
     setCaptchaAnswer("");
     setCaptchaType("");
     setCaptchaImage(""); // the effect above revokes the old Blob URL
@@ -82,6 +87,11 @@ function Login() {
       const riskScore = Number(metricsData.risk_score);
       const captchaToken = metricsData.token;
 
+      setCredentials((prev) => ({
+        ...prev,
+        captchaToken: captchaToken,
+      }));
+
       if (
         metricsData.risk_score === undefined ||
         !Number.isFinite(riskScore) ||
@@ -98,7 +108,7 @@ function Login() {
       setLoginMessage("");
 
       if (riskScore < 50) {
-        // STATIC CAPTCHA (local file)
+        // STATIC CAPTCHA (PNG from the CAPTCHA API)
         setCaptchaType("static");
         console.log("Loading static CAPTCHA GIF...");
       } else {
@@ -107,7 +117,6 @@ function Login() {
         console.log("Loading dynamic CAPTCHA GIF...");
       }
 
-      console.log(captchaToken);
       const captchaResponse = await fetch(
         `${CAPTCHA_API}/captcha` +
         `?token=${captchaToken}` +
@@ -188,10 +197,9 @@ function Login() {
       return;
     }
 
-    // Temporary testing only. Replace with backend verification.
-    if (captchaAnswer.trim() !== "1234") {
-      setLoginMessage("Incorrect CAPTCHA. Please try again.");
-      return;
+    const payload = {
+      ...credentials,
+      captchaText: captchaAnswer,
     }
 
     try {
@@ -200,7 +208,7 @@ function Login() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -300,7 +308,7 @@ function Login() {
 
       {/* FOOTER */}
       <footer>
-        © 2026 MotionClient. All rights reserved.
+        © { new Date().getFullYear() } MotionClient. All rights reserved.
       </footer>
     </div>
   );

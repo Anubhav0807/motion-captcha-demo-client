@@ -7,6 +7,8 @@ const protect = require("../middleware/auth");
 
 const router = express.Router();
 
+const CAPTCHA_API = process.env.CAPTCHA_API;
+
 // REGISTER
 router.post("/register", async (req, res) => {
 
@@ -83,11 +85,36 @@ router.post("/login", async (req, res) => {
 
   try {
 
-    const { email, password } = req.body;
+    const { email, password, captchaToken, captchaText } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
         message: "Email and password are required"
+      });
+    }
+
+    const payload = {
+      token: captchaToken,
+      captcha_text: captchaText,
+    }
+
+    // First verify the captcha before touching the clients database
+    try {
+      const response = await fetch(CAPTCHA_API + "/captcha", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error("CAPTCHA verification failed.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      return res.status(422).json({
+        message: "Incorrect CAPTCHA"
       });
     }
 
@@ -97,7 +124,7 @@ router.post("/login", async (req, res) => {
 
     if (!user) {
       return res.status(401).json({
-        message: "Invalid email or password"
+        message: "Incorrect email or password"
       });
     }
 
@@ -108,7 +135,7 @@ router.post("/login", async (req, res) => {
 
     if (!passwordMatch) {
       return res.status(401).json({
-        message: "Invalid email or password"
+        message: "Incorrect email or password"
       });
     }
 

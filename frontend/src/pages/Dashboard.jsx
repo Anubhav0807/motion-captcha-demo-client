@@ -253,7 +253,7 @@ function Dashboard() {
 
 
       <footer>
-        © 2026 MotionClient. All rights reserved.
+        © { new Date().getFullYear() } MotionClient. All rights reserved.
       </footer>
 
     </div>
